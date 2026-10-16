@@ -5,3 +5,8 @@ secrets/
 *.ovpn
 .pytest_cache/
 
+/storage/
+
+# Arquivos locais de ambiente e backups
+*.env.bak-*
+*.bak-*

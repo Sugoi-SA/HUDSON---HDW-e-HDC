@@ -20,3 +20,7 @@ python-magic>=0.4.27
 unidecode>=1.4.0
 rapidocr-onnxruntime>=1.4.0
 docling>=2.135.0
+pyxlsb>=1.0.10
+odfpy>=1.4.1
+extract-msg>=0.50.0
+python-pptx>=1.0.2
