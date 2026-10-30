@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from app.config import STORAGE_ROOT
@@ -67,6 +67,7 @@ def show_status(status):
     print(f"  Duplicados:        {number('duplicados')}")
     print(f"  Sem texto:         {number('sem_texto')}")
     print(f"  Sem estante:       {number('sem_estante')}")
+    print(f"  Ignorados:         {number('ignorados')}")
     print(f"  Desbloqueados:     {number('desbloqueados')}")
     print(f"  Erros:             {number('errors_count')}")
     print("-" * 72)

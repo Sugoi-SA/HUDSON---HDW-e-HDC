@@ -1,3 +1,4 @@
+import ntpath
 import os
 import stat
 import zipfile
@@ -32,10 +33,11 @@ def validate_archive(path):
             entries = [
                 (
                     info.filename,
-                    0,
+                    getattr(info, "mode", 0) or 0,
                     getattr(info, "file_size", 0) or 0,
                     bool(
-                        getattr(info, "is_symlink", lambda: False)()
+                        getattr(info, "file_redir", None)
+                        or getattr(info, "is_symlink", lambda: False)()
                     ),
                 )
                 for info in archive.infolist()
@@ -47,7 +49,7 @@ def validate_archive(path):
             entries = [
                 (
                     info.filename,
-                    getattr(info, "posix_mode", 0) or 0,
+                    0,
                     getattr(info, "uncompressed", 0) or 0,
                     bool(getattr(info, "is_symlink", False)),
                 )
@@ -66,11 +68,14 @@ def validate_archive(path):
     for name, mode, size, is_link in entries:
         normalized = name.replace("\\", "/")
         parts = normalized.split("/")
+        drive, _ = ntpath.splitdrive(normalized)
 
         if (
-            normalized.startswith("/")
+            "\x00" in name
+            or not normalized.strip("/")
+            or normalized.startswith("/")
+            or bool(drive)
             or any(part == ".." for part in parts)
-            or (len(normalized) >= 2 and normalized[1] == ":")
             or stat.S_ISLNK(mode)
             or is_link
         ):
@@ -96,14 +101,25 @@ def extract_archive(path, destination):
 
     if ext == ".zip":
         with zipfile.ZipFile(path) as archive:
+            bad_file = archive.testzip()
+            if bad_file is not None:
+                raise zipfile.BadZipFile(
+                    "CRC ou cabeçalho inválido no arquivo: " + bad_file
+                )
             archive.extractall(destination)
     elif ext == ".rar":
         import rarfile
         with rarfile.RarFile(path) as archive:
+            archive.testrar()
             archive.extractall(path=destination)
     elif ext == ".7z":
         import py7zr
         with py7zr.SevenZipFile(path, mode="r") as archive:
+            bad_file = archive.testzip()
+            if bad_file is not None:
+                raise ValueError(
+                    "CRC inválido no arquivo 7Z: " + str(bad_file)
+                )
             archive.extractall(path=destination)
 
     root = os.path.realpath(destination)

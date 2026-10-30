@@ -47,6 +47,7 @@ def main():
             "indexados": 0,
             "sem_texto": 0,
             "sem_estante": 0,
+            "ignorados": 0,
             "desbloqueados": 0,
             "errors_count": 0,
             "recent_errors": [],
@@ -78,6 +79,7 @@ def main():
             sem_texto=summary.sem_texto,
             sem_estante=summary.sem_estante,
             desbloqueados=summary.desbloqueados,
+            ignorados=summary.ignorados,
             errors_count=len(summary.erros),
             recent_errors=summary.erros[-10:],
         )
@@ -109,6 +111,7 @@ def main():
             sem_texto=summary.sem_texto,
             sem_estante=summary.sem_estante,
             desbloqueados=summary.desbloqueados,
+            ignorados=summary.ignorados,
             errors_count=len(summary.erros),
             recent_errors=summary.erros[-10:],
         )
@@ -124,6 +127,7 @@ def main():
         print(f"Desbloqueados:               {summary.desbloqueados}")
         print(f"Sem texto extraido:          {summary.sem_texto}")
         print(f"Sem estante mapeada:         {summary.sem_estante}")
+        print(f"Ignorados:                   {summary.ignorados}")
         print(f"Duplicados:                  {summary.duplicados}")
         print(f"Erros:                       {len(summary.erros)}")
         print(f"Estado persistido em:        {progress.status_path}")

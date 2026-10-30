@@ -1,6 +1,18 @@
 import os
 from typing import Dict, Optional
 
+IGNORED_EXTENSIONS = {
+    ".p7s",
+    ".lnk",
+    ".2023",
+    ".exe",
+    ".ini",
+    ".mht",
+    ".msi",
+    ".p7b",
+    ".pfx",
+}
+
 EXTENSION_MAP: Dict[str, str] = {
     ".pdf": "document_text",
     ".doc": "document_text",
@@ -8,13 +20,15 @@ EXTENSION_MAP: Dict[str, str] = {
     ".one": "document_text",
     ".odt": "document_text",
     ".rtf": "document_text",
-    ".zip": "document_text",
-    ".rar": "document_text",
-    ".7z": "document_text",
+    ".md": "document_text",
+    ".fdf": "document_text",
+    ".log": "document_text",
     ".txt": "document_text",
     ".eml": "communication",
     ".msg": "communication",
     ".pst": "communication",
+    ".aspx": "communication",
+    ".html": "communication",
     ".dwg": "engineering_drawings",
     ".dxf": "engineering_drawings",
     ".rvt": "engineering_drawings",
@@ -28,10 +42,13 @@ EXTENSION_MAP: Dict[str, str] = {
     ".csv": "structured_data",
     ".xml": "structured_data",
     ".json": "structured_data",
+    ".loop": "structured_data",
+    ".whiteboard": "structured_data",
     ".jpg": "image",
     ".jpeg": "image",
     ".png": "image",
     ".pptx": "image",
+    ".ico": "image",
     ".tif": "image",
     ".tiff": "image",
     ".bmp": "image",
@@ -45,6 +62,19 @@ EXTENSION_MAP: Dict[str, str] = {
 }
 
 
+def get_extension(filename: str) -> str:
+    """Retorna a extensao em minusculas, inclusive para o nome isolado '.msg'."""
+    if os.path.basename(filename).lower() == ".msg":
+        return ".msg"
+    return os.path.splitext(filename)[1].lower()
+
+
+def is_ignored(filename: str) -> bool:
+    return get_extension(filename) in IGNORED_EXTENSIONS
+
+
 def route(filename: str) -> Optional[str]:
-    ext = os.path.splitext(filename)[1].lower()
+    ext = get_extension(filename)
+    if ext in IGNORED_EXTENSIONS:
+        return None
     return EXTENSION_MAP.get(ext)

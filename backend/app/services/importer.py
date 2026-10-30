@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.models import Item
 from app.services.cota import generate_cota
 from app.services.custody import log_event
-from app.services.estante_router import route
+from app.services.estante_router import get_extension, is_ignored, route
 from app.services.extraction import extract_text
 from app.services.hashing import sha256_file
 from app.services.hudson_desbloqueador import HudsonDesbloqueador
@@ -42,6 +42,7 @@ class ImportSummary:
     sem_texto: int = 0
     sem_estante: int = 0
     desbloqueados: int = 0
+    ignorados: int = 0
     erros: List[str] = field(default_factory=list)
 
 
@@ -55,7 +56,7 @@ def _find_existing(session: Session, hash_hex: str) -> Optional[Item]:
 
 
 def _copy_to_storage(source_path: str, storage_root: str, estante: str, hash_hex: str) -> str:
-    ext = os.path.splitext(source_path)[1].lower()
+    ext = get_extension(os.path.basename(source_path))
     dest_dir = os.path.join(storage_root, estante, hash_hex[:2])
     os.makedirs(dest_dir, exist_ok=True)
     dest_path = os.path.join(dest_dir, f"{hash_hex}{ext}")
@@ -77,7 +78,7 @@ def _import_file(
     usuario_captura: str = "sistema",
     caminho_origem_logico: Optional[str] = None,
 ) -> None:
-    if os.path.splitext(file_path)[1].lower() in ARCHIVE_EXTS:
+    if get_extension(file_path) in ARCHIVE_EXTS:
         raise ValueError("Compactados devem ser tratados como contêineres")
     hash_hex = sha256_file(file_path)
 
@@ -85,7 +86,7 @@ def _import_file(
     stat = os.stat(file_path)
     nome_arquivo = os.path.basename(file_path)
     caminho_orig = caminho_origem_logico or os.path.abspath(file_path)
-    extensao_orig = os.path.splitext(file_path)[1].lower()
+    extensao_orig = get_extension(nome_arquivo)
     tamanho_bytes = stat.st_size
     mtime_orig = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
 
@@ -203,9 +204,17 @@ def _import_recursive(
     source_total: int = 0,
 ) -> None:
     origem = caminho_origem_logico or os.path.abspath(file_path)
+
+    if is_ignored(file_path):
+        summary.ignorados += 1
+        _notify_progress(
+            progress_callback, summary, origem, source_completed, source_total
+        )
+        return
+
     summary.total += 1
 
-    if os.path.splitext(file_path)[1].lower() in ARCHIVE_EXTS:
+    if get_extension(file_path) in ARCHIVE_EXTS:
         if depth >= 10:
             summary.erros.append(
                 f"{origem}: limite de profundidade de compactados atingido"
